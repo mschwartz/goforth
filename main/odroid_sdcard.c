@@ -157,6 +157,6 @@ void init_sdcard(void) {
   ESP_LOGI(TAG, "Read from file: '%s'", line);
 
   // All done, unmount partition and disable SDMMC or SPI peripheral
-  esp_vfs_fat_sdmmc_unmount();
-  ESP_LOGI(TAG, "Card unmounted");
+  //  esp_vfs_fat_sdmmc_unmount();
+  //  ESP_LOGI(TAG, "Card unmounted");
 }

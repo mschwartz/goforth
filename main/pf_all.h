@@ -31,7 +31,7 @@
 #endif
 #define PF_NO_INIT
 #define PF_STATIC_DIC
-#define PF_NO_FILEIO
+//#define PF_NO_FILEIO
 #define PF_NO_CLIB
 
 /* I don't see any way to pass compiler flags to the Mac Code Warrior compiler!
