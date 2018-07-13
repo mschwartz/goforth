@@ -11,6 +11,7 @@
 #include "esp_log.h"
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
+#include <dirent.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -156,6 +157,19 @@ void init_sdcard(void) {
   }
   ESP_LOGI(TAG, "Read from file: '%s'", line);
 
+  {
+    struct dirent *de;
+    DIR *d = opendir("/sdcard");
+    if (!d) {
+      ESP_LOGE(TAG, "could not opendir /sdcard");
+      return;
+    }
+    while ((de = readdir(d)) != NULL) {
+      printf("%s\n", de->d_name);
+    }
+    closedir(d);
+  }
+  //
   // All done, unmount partition and disable SDMMC or SPI peripheral
   //  esp_vfs_fat_sdmmc_unmount();
   //  ESP_LOGI(TAG, "Card unmounted");

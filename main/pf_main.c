@@ -25,6 +25,16 @@
 #define ERR(msg) /* { printf msg; } */
 #else
 #include <stdio.h>
+#include <sys/stat.h>
+
+int exists(const char *filename) {
+  struct stat buf;
+  if (stat(filename, &buf) < 0) {
+    return 0;
+  }
+  return (!0);
+}
+
 #define ERR(msg)                                                               \
   { printf msg; }
 #endif
@@ -32,7 +42,7 @@
 #include "pforth.h"
 
 #ifndef PF_DEFAULT_DICTIONARY
-#define PF_DEFAULT_DICTIONARY "pforth.dic"
+#define PF_DEFAULT_DICTIONARY "/sdcard/pforth.dic"
 #endif
 
 #ifdef __MWERKS__
@@ -47,8 +57,8 @@
 
 int pf_main(void) {
   char IfInit = TRUE;
-  const char *DicName = NULL;
-  const char *SourceName = NULL;
-  pfMessage("\npForth Embedded\n");
+  char *DicName = exists(PF_DEFAULT_DICTIONARY) ? PF_DEFAULT_DICTIONARY : NULL;
+  ;
+  char *SourceName = NULL;
   return pfDoForth(DicName, SourceName, IfInit);
 }
