@@ -40,8 +40,8 @@
 ***************************************************************/
 
 char gScratch[TIB_SIZE];
-pfTaskData_t *gCurrentTask = NULL;
-pfDictionary_t *gCurrentDictionary;
+pfTaskData_t* gCurrentTask = NULL;
+pfDictionary_t* gCurrentDictionary;
 cell_t gNumPrimitives;
 
 ExecToken gLocalCompiler_XT; /* custom compiler for local variables */
@@ -80,7 +80,8 @@ static void pfTerm(void);
 /* Initialize globals in a function to simplify loading on
  * embedded systems which may not support initialization of data section.
  */
-static void pfInit(void) {
+static void pfInit(void)
+{
   /* all zero */
   gCurrentTask = NULL;
   gCurrentDictionary = NULL;
@@ -102,14 +103,18 @@ static void pfInit(void) {
   pfInitMemoryAllocator();
   ioInit();
 }
-static void pfTerm(void) { ioTerm(); }
+static void pfTerm(void)
+{
+  ioTerm();
+}
 
 /***************************************************************
 ** Task Management
 ***************************************************************/
 
-void pfDeleteTask(PForthTask task) {
-  pfTaskData_t *cftd = (pfTaskData_t *)task;
+void pfDeleteTask(PForthTask task)
+{
+  pfTaskData_t* cftd = (pfTaskData_t*)task;
   FREE_VAR(cftd->td_ReturnLimit);
   FREE_VAR(cftd->td_StackLimit);
   pfFreeMem(cftd);
@@ -117,17 +122,18 @@ void pfDeleteTask(PForthTask task) {
 
 /* Allocate some extra cells to protect against mild stack underflows. */
 #define STACK_SAFETY (8)
-PForthTask pfCreateTask(cell_t UserStackDepth, cell_t ReturnStackDepth) {
-  pfTaskData_t *cftd;
+PForthTask pfCreateTask(cell_t UserStackDepth, cell_t ReturnStackDepth)
+{
+  pfTaskData_t* cftd;
 
-  cftd = (pfTaskData_t *)pfAllocMem(sizeof(pfTaskData_t));
+  cftd = (pfTaskData_t*)pfAllocMem(sizeof(pfTaskData_t));
   if (!cftd)
     goto nomem;
   pfSetMemory(cftd, 0, sizeof(pfTaskData_t));
 
   /* Allocate User Stack */
-  cftd->td_StackLimit = (cell_t *)pfAllocMem(
-      (ucell_t)(sizeof(cell_t) * (UserStackDepth + STACK_SAFETY)));
+  cftd->td_StackLimit =
+    (cell_t*)pfAllocMem((ucell_t)(sizeof(cell_t) * (UserStackDepth + STACK_SAFETY)));
   if (!cftd->td_StackLimit)
     goto nomem;
   cftd->td_StackBase = cftd->td_StackLimit + UserStackDepth;
@@ -135,7 +141,7 @@ PForthTask pfCreateTask(cell_t UserStackDepth, cell_t ReturnStackDepth) {
 
   /* Allocate Return Stack */
   cftd->td_ReturnLimit =
-      (cell_t *)pfAllocMem((ucell_t)(sizeof(cell_t) * ReturnStackDepth));
+    (cell_t*)pfAllocMem((ucell_t)(sizeof(cell_t) * ReturnStackDepth));
   if (!cftd->td_ReturnLimit)
     goto nomem;
   cftd->td_ReturnBase = cftd->td_ReturnLimit + ReturnStackDepth;
@@ -144,8 +150,8 @@ PForthTask pfCreateTask(cell_t UserStackDepth, cell_t ReturnStackDepth) {
 /* Allocate Float Stack */
 #ifdef PF_SUPPORT_FP
   /* Allocate room for as many Floats as we do regular data. */
-  cftd->td_FloatStackLimit = (PF_FLOAT *)pfAllocMem(
-      (ucell_t)(sizeof(PF_FLOAT) * (UserStackDepth + STACK_SAFETY)));
+  cftd->td_FloatStackLimit =
+    (PF_FLOAT*)pfAllocMem((ucell_t)(sizeof(PF_FLOAT) * (UserStackDepth + STACK_SAFETY)));
   if (!cftd->td_FloatStackLimit)
     goto nomem;
   cftd->td_FloatStackBase = cftd->td_FloatStackLimit + UserStackDepth;
@@ -170,7 +176,8 @@ nomem:
 ** Dictionary Management
 ***************************************************************/
 
-ThrowCode pfExecIfDefined(const char *CString) {
+ThrowCode pfExecIfDefined(const char* CString)
+{
   ThrowCode result = 0;
   if (NAME_BASE != (cell_t)NULL) {
     ExecToken XT;
@@ -184,8 +191,9 @@ ThrowCode pfExecIfDefined(const char *CString) {
 /***************************************************************
 ** Delete a dictionary created by pfCreateDictionary()
 */
-void pfDeleteDictionary(PForthDictionary dictionary) {
-  pfDictionary_t *dic = (pfDictionary_t *)dictionary;
+void pfDeleteDictionary(PForthDictionary dictionary)
+{
+  pfDictionary_t* dic = (pfDictionary_t*)dictionary;
   if (!dic)
     return;
 
@@ -203,11 +211,12 @@ void pfDeleteDictionary(PForthDictionary dictionary) {
 ** Delete using pfDeleteDictionary().
 ** Return pointer to dictionary management structure.
 */
-PForthDictionary pfCreateDictionary(cell_t HeaderSize, cell_t CodeSize) {
+PForthDictionary pfCreateDictionary(cell_t HeaderSize, cell_t CodeSize)
+{
   /* Allocate memory for initial dictionary. */
-  pfDictionary_t *dic;
+  pfDictionary_t* dic;
 
-  dic = (pfDictionary_t *)pfAllocMem(sizeof(pfDictionary_t));
+  dic = (pfDictionary_t*)pfAllocMem(sizeof(pfDictionary_t));
   if (!dic)
     goto nomem;
   pfSetMemory(dic, 0, sizeof(pfDictionary_t));
@@ -219,36 +228,33 @@ PForthDictionary pfCreateDictionary(cell_t HeaderSize, cell_t CodeSize) {
  * to (ucell_t) on 16 bit systems.
  */
 #define DIC_ALIGNMENT_SIZE ((ucell_t)(0x10))
-#define DIC_ALIGN(addr)                                                        \
+#define DIC_ALIGN(addr) \
   ((((ucell_t)(addr)) + DIC_ALIGNMENT_SIZE - 1) & ~(DIC_ALIGNMENT_SIZE - 1))
 
   /* Allocate memory for header. */
   if (HeaderSize > 0) {
     dic->dic_HeaderBaseUnaligned =
-        (ucell_t)pfAllocMem((ucell_t)HeaderSize + DIC_ALIGNMENT_SIZE);
+      (ucell_t)pfAllocMem((ucell_t)HeaderSize + DIC_ALIGNMENT_SIZE);
     if (!dic->dic_HeaderBaseUnaligned)
       goto nomem;
     /* Align header base. */
     dic->dic_HeaderBase = DIC_ALIGN(dic->dic_HeaderBaseUnaligned);
-    pfSetMemory((char *)dic->dic_HeaderBase, 0xA5, (ucell_t)HeaderSize);
+    pfSetMemory((char*)dic->dic_HeaderBase, 0xA5, (ucell_t)HeaderSize);
     dic->dic_HeaderLimit = dic->dic_HeaderBase + HeaderSize;
     dic->dic_HeaderPtr = dic->dic_HeaderBase;
-  }
-  else {
+  } else {
     dic->dic_HeaderBase = 0;
   }
 
   /* Allocate memory for code. */
-  dic->dic_CodeBaseUnaligned =
-      (ucell_t)pfAllocMem((ucell_t)CodeSize + DIC_ALIGNMENT_SIZE);
+  dic->dic_CodeBaseUnaligned = (ucell_t)pfAllocMem((ucell_t)CodeSize + DIC_ALIGNMENT_SIZE);
   if (!dic->dic_CodeBaseUnaligned)
     goto nomem;
   dic->dic_CodeBase = DIC_ALIGN(dic->dic_CodeBaseUnaligned);
-  pfSetMemory((char *)dic->dic_CodeBase, 0x5A, (ucell_t)CodeSize);
+  pfSetMemory((char*)dic->dic_CodeBase, 0x5A, (ucell_t)CodeSize);
 
   dic->dic_CodeLimit = dic->dic_CodeBase + CodeSize;
-  dic->dic_CodePtr.Byte =
-      ((uint8_t *)(dic->dic_CodeBase + QUADUP(NUM_PRIMITIVES)));
+  dic->dic_CodePtr.Byte = ((uint8_t*)(dic->dic_CodeBase + QUADUP(NUM_PRIMITIVES)));
 
   return (PForthDictionary)dic;
 nomem:
@@ -260,7 +266,8 @@ nomem:
 ** Used by Quit and other routines to restore system.
 ***************************************************************/
 
-static void pfResetForthTask(void) {
+static void pfResetForthTask(void)
+{
   /* Go back to terminal input. */
   gCurrentTask->td_InputStream = PF_STDIN;
 
@@ -280,24 +287,34 @@ static void pfResetForthTask(void) {
 ** Set current task context.
 ***************************************************************/
 
-void pfSetCurrentTask(PForthTask task) { gCurrentTask = (pfTaskData_t *)task; }
+void pfSetCurrentTask(PForthTask task)
+{
+  gCurrentTask = (pfTaskData_t*)task;
+}
 
 /***************************************************************
 ** Set Quiet Flag.
 ***************************************************************/
 
-void pfSetQuiet(cell_t IfQuiet) { gVarQuiet = (cell_t)IfQuiet; }
+void pfSetQuiet(cell_t IfQuiet)
+{
+  gVarQuiet = (cell_t)IfQuiet;
+}
 
 /***************************************************************
 ** Query message status.
 ***************************************************************/
 
-cell_t pfQueryQuiet(void) { return gVarQuiet; }
+cell_t pfQueryQuiet(void)
+{
+  return gVarQuiet;
+}
 
 /***************************************************************
 ** Top level interpreter.
 ***************************************************************/
-ThrowCode pfQuit(void) {
+ThrowCode pfQuit(void)
+{
   ThrowCode exception;
   int go = 1;
 
@@ -308,20 +325,20 @@ ThrowCode pfQuit(void) {
     }
 
     switch (exception) {
-      case 0:
-        break;
+    case 0:
+      break;
 
-      case THROW_BYE:
-        go = 0;
-        break;
+    case THROW_BYE:
+      go = 0;
+      break;
 
-      case THROW_ABORT:
-      default:
-        ffDotS();
-        pfReportThrow(exception);
-        pfHandleIncludeError();
-        pfResetForthTask();
-        break;
+    case THROW_ABORT:
+    default:
+      ffDotS();
+      pfReportThrow(exception);
+      pfHandleIncludeError();
+      pfResetForthTask();
+      break;
     }
   }
 
@@ -332,8 +349,9 @@ ThrowCode pfQuit(void) {
 ** Include file based on 'C' name.
 ***************************************************************/
 
-cell_t pfIncludeFile(const char *FileName) {
-  FileStream *fid;
+cell_t pfIncludeFile(const char* FileName)
+{
+  FileStream* fid;
   cell_t Result;
   char buffer[32];
   cell_t numChars, len;
@@ -366,7 +384,8 @@ cell_t pfIncludeFile(const char *FileName) {
 ** Output 'C' string message.
 ** Use sdTerminalOut which works before initializing gCurrentTask.
 ***************************************************************/
-void pfDebugMessage(const char *CString) {
+void pfDebugMessage(const char* CString)
+{
 #if 0
     while( *CString )
     {
@@ -390,7 +409,8 @@ void pfDebugMessage(const char *CString) {
 /***************************************************************
 ** Print a decimal number to debug output.
 */
-void pfDebugPrintDecimalNumber(int n) {
+void pfDebugPrintDecimalNumber(int n)
+{
   pfDebugMessage(ConvertNumberToText(n, 10, TRUE, 1));
 }
 
@@ -400,17 +420,18 @@ void pfDebugPrintDecimalNumber(int n) {
 ** which may not be present on a small embedded system.
 ** Uses ioType & ioEmit so requires that gCurrentTask has been initialized.
 ***************************************************************/
-void pfMessage(const char *CString) {
+void pfMessage(const char* CString)
+{
   ioType(CString, (cell_t)pfCStringLength(CString));
 }
 
 /**************************************************************************
 ** Main entry point for pForth.
 */
-ThrowCode pfDoForth(const char *DicFileName, const char *SourceName,
-                    cell_t IfInit) {
-  pfTaskData_t *cftd;
-  pfDictionary_t *dic = NULL;
+ThrowCode pfDoForth(const char* DicFileName, const char* SourceName, cell_t IfInit)
+{
+  pfTaskData_t* cftd;
+  pfDictionary_t* dic = NULL;
   ThrowCode Result = 0;
   ExecToken EntryPoint = 0;
 
@@ -441,13 +462,13 @@ ThrowCode pfDoForth(const char *DicFileName, const char *SourceName,
 #endif
       if (sizeof(cell_t) == 8) {
         MSG("/64");
-      }
-      else if (sizeof(cell_t) == 4) {
+      } else if (sizeof(cell_t) == 4) {
         MSG("/32");
       }
 
-      MSG(", built "__DATE__
-          " "__TIME__);
+      MSG(
+        ", built "__DATE__
+        " "__TIME__);
     }
 
     /* Don't use MSG before task set. */
@@ -465,8 +486,7 @@ ThrowCode pfDoForth(const char *DicFileName, const char *SourceName,
 #if (!defined(PF_NO_INIT)) && (!defined(PF_NO_SHELL))
     if (IfInit) {
       dic = pfBuildDictionary(DEFAULT_HEADER_SIZE, DEFAULT_CODE_SIZE);
-    }
-    else
+    } else
 #else
     TOUCH(IfInit);
 #endif /* !PF_NO_INIT && !PF_NO_SHELL*/
@@ -479,8 +499,8 @@ ThrowCode pfDoForth(const char *DicFileName, const char *SourceName,
           EMIT_CR;
         }
         dic = pfLoadDictionary(DicFileName, &EntryPoint);
-      }
-      else {
+        CompileCustomFunctions();
+      } else {
         if (!gVarQuiet) {
           MSG(" (static)\n");
           EMIT_CR;
@@ -511,8 +531,7 @@ ThrowCode pfDoForth(const char *DicFileName, const char *SourceName,
       if (SourceName == NULL) {
         pfDebugMessage("pfDoForth: pfQuit\n");
         Result = pfQuit();
-      }
-      else {
+      } else {
         if (!gVarQuiet) {
           MSG("Including: ");
           MSG(SourceName);
@@ -551,7 +570,8 @@ error1:
 }
 
 #ifdef PF_UNIT_TEST
-cell_t pfUnitTest(void) {
+cell_t pfUnitTest(void)
+{
   cell_t numErrors = 0;
   numErrors += pfUnitTestText();
   return numErrors;

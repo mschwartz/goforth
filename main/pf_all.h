@@ -29,10 +29,14 @@
 #define PF_NO_CLIB
 #define PF_NO_FILEIO
 #endif
+
+#define PF_NO_GLOBAL_INIT
 #define PF_NO_INIT
 #define PF_STATIC_DIC
 //#define PF_NO_FILEIO
 #define PF_NO_CLIB
+//#define PF_USER_CUSTOM "odroid_words.c"
+#undef PF_NO_SHELL
 
 /* I don't see any way to pass compiler flags to the Mac Code Warrior compiler!
  */
@@ -51,29 +55,17 @@
 #endif
 
 #include "pforth.h"
-//
 #include "pf_types.h"
-//
 #include "pf_io.h"
-//
 #include "pf_guts.h"
-//
 #include "pf_text.h"
-//
 #include "pfcompil.h"
-//
 #include "pf_clib.h"
-//
 #include "pf_words.h"
-//
 #include "pf_save.h"
-//
 #include "pf_mem.h"
-//
 #include "pf_cglue.h"
-//
 #include "pf_core.h"
-//
 
 #ifdef PF_USER_INC2
 /* This could be used to undef and redefine macros. */

@@ -1,3 +1,5 @@
 build
 *.o
 sdkconfig.old
+wifi_credentials.h
+

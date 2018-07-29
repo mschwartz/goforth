@@ -21,13 +21,14 @@
 ***************************************************************/
 
 #if (defined(PF_NO_STDIO) || defined(PF_EMBEDDED))
-#define NULL ((void *)0)
+#define NULL ((void*)0)
 #define ERR(msg) /* { printf msg; } */
 #else
 #include <stdio.h>
 #include <sys/stat.h>
 
-int exists(const char *filename) {
+int exists(const char* filename)
+{
   struct stat buf;
   if (stat(filename, &buf) < 0) {
     return 0;
@@ -35,8 +36,10 @@ int exists(const char *filename) {
   return (!0);
 }
 
-#define ERR(msg)                                                               \
-  { printf msg; }
+#define ERR(msg) \
+  {              \
+    printf msg;  \
+  }
 #endif
 
 #include "pforth.h"
@@ -55,10 +58,11 @@ int exists(const char *filename) {
 #define FALSE (0)
 #endif
 
-int pf_main(void) {
+int pf_main(void)
+{
   char IfInit = TRUE;
-  char *DicName = exists(PF_DEFAULT_DICTIONARY) ? PF_DEFAULT_DICTIONARY : NULL;
+  char* DicName = exists(PF_DEFAULT_DICTIONARY) ? PF_DEFAULT_DICTIONARY : NULL;
   ;
-  char *SourceName = NULL;
+  char* SourceName = NULL;
   return pfDoForth(DicName, SourceName, IfInit);
 }

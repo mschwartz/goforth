@@ -1,5 +1,7 @@
 /* @(#) pfcustom.c 98/01/26 1.3 */
 
+#include "pf_all.h"
+
 #ifndef PF_USER_CUSTOM
 
 /***************************************************************
@@ -25,27 +27,45 @@
 **
 ***************************************************************/
 
-
-#include "pf_all.h"
-
-static cell_t CTest0( cell_t Val );
-static void CTest1( cell_t Val1, cell_t Val2 );
+static cell_t CTest0(cell_t Val);
+static void CTest1(cell_t Val1, cell_t Val2);
+static cell_t WGet(cell_t curl, cell_t cfilename);
 
 /****************************************************************
 ** Step 1: Put your own special glue routines here
 **     or link them in from another file or library.
 ****************************************************************/
-static cell_t CTest0( cell_t Val )
+static cell_t CTest0(cell_t Val)
 {
-    MSG_NUM_D("CTest0: Val = ", Val);
-    return Val+1;
+  MSG_NUM_D("CTest0: Val = ", Val);
+  return Val + 10;
 }
 
-static void CTest1( cell_t Val1, cell_t Val2 )
+static void CTest1(cell_t Val1, cell_t Val2)
 {
+  MSG("CTest1: Val1 = ");
+  ffDot(Val1);
+  MSG_NUM_D(", Val2 = ", Val2);
+}
 
-    MSG("CTest1: Val1 = "); ffDot(Val1);
-    MSG_NUM_D(", Val2 = ", Val2);
+extern char* HttpGet(const char* url);
+
+static cell_t WGet(cell_t curl, cell_t cfilename)
+{
+  const char* url = (const char*)url;
+  //  const char *filename = (const char *)cfilename;
+
+  char* data = HttpGet(url);
+
+  char* src = data;
+  while (*src && *src != '\n' && src[1] != '\n')
+    src++;
+  if (!*src) {
+    return 0;
+  }
+  src++;
+  printf("---\n%s\n---\n", src);
+  return -1;
 }
 
 /****************************************************************
@@ -62,25 +82,27 @@ static void CTest1( cell_t Val1, cell_t Val2 )
 ** Do not change the name of LoadCustomFunctionTable()!
 ** It is called by the pForth kernel.
 */
-#define NUM_CUSTOM_FUNCTIONS  (2)
+#define NUM_CUSTOM_FUNCTIONS (3)
 CFunc0 CustomFunctionTable[NUM_CUSTOM_FUNCTIONS];
 
-Err LoadCustomFunctionTable( void )
+Err LoadCustomFunctionTable(void)
 {
-    CustomFunctionTable[0] = CTest0;
-    CustomFunctionTable[1] = CTest1;
-    return 0;
+  CustomFunctionTable[0] = (CFunc0)WGet;
+  CustomFunctionTable[1] = (CFunc0)CTest0;
+  CustomFunctionTable[2] = (CFunc0)CTest1;
+  return 0;
 }
 
 #else
+// gets executed
 /******************
 ** If your loader supports global initialization (most do.) then just
 ** create the table like this.
 */
-CFunc0 CustomFunctionTable[] =
-{
-    (CFunc0) CTest0,
-    (CFunc0) CTest1
+CFunc0 CustomFunctionTable[] = {
+  (CFunc0)WGet,   //
+  (CFunc0)CTest0, //
+  (CFunc0)CTest1, //
 };
 #endif
 
@@ -90,25 +112,37 @@ CFunc0 CustomFunctionTable[] =
 **     It is called by the pForth kernel.
 ****************************************************************/
 
-#if (!defined(PF_NO_INIT)) && (!defined(PF_NO_SHELL))
-Err CompileCustomFunctions( void )
+//#if (!defined(PF_NO_INIT)) && (!defined(PF_NO_SHELL))
+Err CompileCustomFunctions(void)
 {
-    Err err;
-    int i = 0;
-/* Compile Forth words that call your custom functions.
-** Make sure order of functions matches that in LoadCustomFunctionTable().
-** Parameters are: Name in UPPER CASE, Function, Index, Mode, NumParams
-*/
-    err = CreateGlueToC( "CTEST0", i++, C_RETURNS_VALUE, 1 );
-    if( err < 0 ) return err;
-    err = CreateGlueToC( "CTEST1", i++, C_RETURNS_VOID, 2 );
-    if( err < 0 ) return err;
-
-    return 0;
+  printf("CompileCustomFunctions\n");
+  Err err;
+  int i = 0;
+  /* Compile Forth words that call your custom functions.
+  ** Make sure order of functions matches that in LoadCustomFunctionTable().
+  ** Parameters are: Name in UPPER CASE, Function, Index, Mode, NumParams
+  */
+  err = CreateGlueToC("WGET", i++, C_RETURNS_VALUE, 2);
+  if (err < 0) {
+    printf("CreateGlueToC WGET failed\n");
+    return err;
+  }
+  err = CreateGlueToC("CTEST0", i++, C_RETURNS_VALUE, 1);
+  if (err < 0)
+    return err;
+  err = CreateGlueToC("CTEST1", i++, C_RETURNS_VOID, 2);
+  if (err < 0)
+    return err;
+  return 0;
 }
-#else
-Err CompileCustomFunctions( void ) { return 0; }
-#endif
+//#else
+// gets executed
+// Err CompileCustomFunctions(void)
+//{
+//  printf("CompileCustomFunctions stub\n");
+//  return 0;
+//}
+//#endif
 
 /****************************************************************
 ** Step 4: Recompile using compiler option PF_USER_CUSTOM
@@ -117,5 +151,4 @@ Err CompileCustomFunctions( void ) { return 0; }
 **         Test:   10 Ctest0 ( should print message then '11' )
 ****************************************************************/
 
-#endif  /* PF_USER_CUSTOM */
-
+#endif /* PF_USER_CUSTOM */
